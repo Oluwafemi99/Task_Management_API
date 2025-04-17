@@ -4,7 +4,7 @@ from .models import Users, Tasks
 from .serializers import UsersSerializer, Taskserializers
 from rest_framework.response import Response
 from rest_framework import status
-from datetime import timezone
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 
@@ -49,6 +49,7 @@ class MarkTaskInCompleteView(generics.UpdateAPIView):
         task.Status = 'PENDING'
         task.Completed_at = None
         task.save()
+        return Response({'message': 'Task marked as incompleted.'}, status=status.HTTP_200_OK)
 
 
 class UserCreateView(generics.CreateAPIView):
@@ -85,9 +86,15 @@ class TaskCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = Taskserializers
 
+    def perform_create(self, serializer):
+        User = serializer.validated_data['User']
+        if User != self.request.user:
+            raise PermissionError({'you are not authorised'})
+        serializer.save(User=self.request.user)
+
 
 class TaskListView(generics.ListAPIView):
-    queryset = Tasks.objects.all()
+    # queryset = Tasks.objects.all()
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = Taskserializers
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -95,8 +102,17 @@ class TaskListView(generics.ListAPIView):
     Ordering_fields = ['Due_Date', 'Priority_Level']
     ordering = ['Due_Date']
 
+    def get_queryset(self):
+        # Filter the queryset to return only the authenticated user's details
+        return Tasks.objects.filter(User=self.request.user)
+
 
 class TaskDeleteView(generics.DestroyAPIView):
     queryset = Tasks.objects.all()
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = Taskserializers
+
+    def perform_destroy(self, instance):
+        if instance.User != self.request.user:
+            raise PermissionError({'you do not have the permission'})
+        instance.delete()
