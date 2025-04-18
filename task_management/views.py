@@ -18,11 +18,14 @@ class MarkTaskCompleteView(generics.UpdateAPIView):
     def patch(self, request, pk):
         try:
             task = Tasks.objects.get(pk=pk)
-        except task.DoesNotExist:
+        except Tasks.DoesNotExist:
             return Response({'error: Task not found'})
 
         if task.Status == 'COMPLETED':
             return Response({'error: Task is already completed'}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif task.User != self.request.user:
+            return Response({'error: You are not Authorised'}, status=status.HTTP_400_BAD_REQUEST)
 
         task.Status = 'COMPLETED'
         task.Completed_at = timezone.now()
@@ -40,11 +43,14 @@ class MarkTaskInCompleteView(generics.UpdateAPIView):
         try:
             task = Tasks.objects.get(pk=pk)
 
-        except task.DoesNotExist:
+        except Tasks.DoesNotExist:
             return Response({'error: Task not found'})
 
         if task.Status == 'PENDING':
             return Response({"error": "Task is not marked as complete."}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif task.User != self.request.user:
+            return Response({'error: You are not Authorised'}, status=status.HTTP_400_BAD_REQUEST)
 
         task.Status = 'PENDING'
         task.Completed_at = None

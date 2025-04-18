@@ -23,49 +23,49 @@ class UsersSerializer(serializers.ModelSerializer):
 
 
 class Taskserializers(serializers.ModelSerializer):
+    Priority_Level = serializers.ChoiceField(choices=['LOW', 'MEDIUM', 'HIGH'])
+    Status = serializers.ChoiceField(choices=['PENDING', 'COMPLETED'])
 
     class Meta:
         model = Tasks
         fields = '__all__'
 
-    def validate_due_date(self, data):
-        Due_Date = data.get('Due_Date')
-        if Due_Date < date.today():
+    def validate_Due_Date(self, value):
+        if value < date.today():
             raise serializers.ValidationError('Due date must be in the future')
-        return data
+        return value
 
-    def validate_priority_level(self, data):
-        Priority_Level = data.get('Priority_Level')
-        if Priority_Level == 'LOW':
+    def validate_Priority_Level(self, value):
+
+        if value == 'LOW':
             message = 'is a low priority task with a deadline. consider scheduling time for it.'
 
-        elif Priority_Level == 'MEDIUM':
+        elif value == 'MEDIUM':
             message = 'is a medium priority task with a deadline. plan accodingly!'
 
-        elif Priority_Level == 'HIGH':
+        elif value == 'HIGH':
             message = 'is a high priority task that requires immediate attention'
 
         else:
             raise serializers.ValidationError('invalid Priority_level')
 
         # add result to the validated data
-        data['message'] = message
-        return data
+        self.context['priority_message'] = message
+        return value
 
-    def validate_status(self, data):
-        Status = data.get('Status')
+    def validate_Status(self, value):
 
-        if Status == 'PENDING':
+        if value == 'PENDING':
             message = 'The task is currently pending.'
 
-        elif Status == 'COMPLETED':
+        elif value == 'COMPLETED':
             message = 'The task has been completed.'
 
         else:
             raise serializers.ValidationError('Invalid Status')
 
-        data['message'] = message
-        return data
+        self.context['status_massage'] = message
+        return value
 
     def validate(self, data):
         Status = data.get('Status')
