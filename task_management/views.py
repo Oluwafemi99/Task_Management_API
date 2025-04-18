@@ -100,7 +100,6 @@ class TaskCreateView(generics.CreateAPIView):
 
 
 class TaskListView(generics.ListAPIView):
-    # queryset = Tasks.objects.all()
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = Taskserializers
     filter_backends = [DjangoFilterBackend, OrderingFilter]
